@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${post.title}"></title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="mt-5 mb-3">
+        <h2 th:text="${post.title}"></h2>
+        <p class="text-muted">작성자: <span th:text="${post.author.username}"></span> | 작성일: <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></span></p>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <p class="card-text" th:text="${post.content}"></p>
+        </div>
+    </div>
+
+    <div sec:authorize="isAuthenticated() and (#authentication.name == #vars.post.author.username)">
+        <a th:href="@{/posts/{id}/edit(id=${post.id})}" class="btn btn-warning">수정</a>
+        <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" style="display: inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
+            <button type="submit" class="btn btn-danger">삭제</button>
+        </form>
+    </div>
+
+    <a th:href="@{/posts}" class="btn btn-info mt-3">목록으로 돌아가기</a>
+
+    <!-- Comments Section -->
+    <div class="mt-5">
+        <h3>댓글 (<span th:text="${#lists.size(post.comments)}"></span>)</h3>
+        <div class="card mb-3" th:each="comment : ${post.comments}">
+            <div class="card-body">
+                <p class="card-text" th:text="${comment.content}"></p>
+                <p class="text-muted small">작성자: <span th:text="${comment.author.username}"></span> | 작성일: <span th:text="${#temporals.format(comment.createdAt, 'yyyy-MM-dd HH:mm')}"></span></p>
+                <div sec:authorize="isAuthenticated() and (#authentication.name == #vars.comment.author.username)">
+                    <!-- Edit Comment Form (hidden by default) -->
+                    <form th:action="@{/posts/{postId}/comments/{commentId}/edit(postId=${post.id}, commentId=${comment.id})}" method="post" class="d-none edit-comment-form" th:id="'edit-comment-form-' + ${comment.id}">
+                        <div class="form-group">
+                            <textarea th:name="'content'" class="form-control" rows="3" th:text="${comment.content}"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-success">수정 완료</button>
+                        <button type="button" class="btn btn-sm btn-secondary cancel-edit" th:data-comment-id="${comment.id}">취소</button>
+                    </form>
+                    <button type="button" class="btn btn-sm btn-outline-warning toggle-edit-comment" th:data-comment-id="${comment.id}">수정</button>
+                    <form th:action="@{/posts/{postId}/comments/{commentId}/delete(postId=${post.id}, commentId=${comment.id})}" method="post" style="display: inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div sec:authorize="isAuthenticated()">
+            <h4>댓글 작성</h4>
+            <form th:action="@{/posts/{postId}/comments(postId=${post.id})}" th:object="${commentFormDto}" method="post">
+                <div class="form-group">
+                    <textarea id="content" th:field="*{content}" class="form-control" rows="3" placeholder="댓글을 입력하세요"></textarea>
+                    <p th:if="${#fields.hasErrors('content')}" th:errors="*{content}" class="text-danger"></p>
+                </div>
+                <button type="submit" class="btn btn-primary">댓글 작성</button>
+            </form>
+        </div>
+        <div sec:authorize="isAnonymous()" class="alert alert-info mt-3">
+            댓글을 작성하려면 <a th:href="@{/users/login}">로그인</a>해주세요.
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.toggle-edit-comment').forEach(button => {
+        button.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const editForm = document.getElementById('edit-comment-form-' + commentId);
+            editForm.classList.toggle('d-none');
+            this.classList.toggle('d-none');
+        });
+    });
+
+    document.querySelectorAll('.cancel-edit').forEach(button => {
+        button.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const editForm = document.getElementById('edit-comment-form-' + commentId);
+            editForm.classList.add('d-none');
+            document.querySelector('.toggle-edit-comment[data-comment-id="' + commentId + '"]').classList.remove('d-none');
+        });
+    });
+</script>
+</body>
+</html>
