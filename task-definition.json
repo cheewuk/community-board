@@ -1,0 +1,30 @@
+{
+    "family": "community-board-task-family",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "containerDefinitions": [
+        {
+            "name": "community-board-container",
+            "image": "859885916358.dkr.ecr.ap-northeast-2.amazonaws.com/community-board-repo:latest",
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/community-board-task-family",
+                    "awslogs-region": "ap-northeast-2",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
+        }
+    ],
+    "executionRoleArn": "arn:aws:iam::859885916358:role/ecsTaskExecutionRole"
+}
